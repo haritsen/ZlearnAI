@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZLearnAI</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+      /* --- TEMA DEEP SEA (LAUT DALAM) --- */
+      :root {
+        --primary: #00e5ff;
+        --primary-hover: #6effff;
+        --text-primary: #e0f7fa;
+        --text-secondary: #81d4fa;
+        --bg-card: rgba(2, 28, 45, 0.9);
+        --border-color: rgba(0, 229, 255, 0.3);
+        --success-color: #00e676;
+        --error-color: #ff1744;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Source Sans Pro", sans-serif;
+        color: var(--text-primary);
+        margin: 0;
+        height: 100vh;
+        background: linear-gradient(180deg, #051937 0%, #004d7a 100%);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* --- LAYOUT UTAMA --- */
+      #app-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.5s ease;
+        padding: 10px;
+        position: relative;
+      }
+
+      /* Mode Aktif */
+      body.active-mode #app-container {
+        justify-content: flex-start;
+        padding-top: 15px; /* Sedikit padding atas */
+        padding-bottom: 110px; /* Ruang lebih besar untuk input bar di bawah */
+      }
+
+      /* --- HEADER --- */
+      .st-header {
+        text-align: center;
+        transition: all 0.5s ease;
+        margin-bottom: 2rem;
+        flex-shrink: 0;
+      }
+
+      h1 {
+        font-weight: 700;
+        margin: 0;
+        font-size: 4rem;
+        background: -webkit-linear-gradient(45deg, #00e5ff, #ffffff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0px 0px 25px rgba(0, 229, 255, 0.4);
+      }
+      h2 {
+        font-weight: 700;
+        margin: 0;
+        font-size: 4rem;
+        background: -webkit-linear-gradient(45deg, #00e5ff, #ffffff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0px 0px 25px rgba(0, 229, 255, 0.4);
+      }
+
+      .subtitle {
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        margin-top: 15px;
+      }
+
+      /* --- LOGIKA MENYEMBUNYIKAN HEADER --- */
+      body.active-mode .st-header {
+        display: none;
+      }
+
+      /* --- CONTENT DISPLAY AREA --- */
+      #content-display {
+        display: none;
+        width: 98%;
+        max-width: 1500px;
+        height: 0;
+        flex-grow: 1;
+        background-color: var(--bg-card);
+        backdrop-filter: blur(10px);
+        border-radius: 25px;
+        border: 1px solid var(--border-color);
+        margin-top: 0;
+        position: relative;
+        animation: expandView 0.5s forwards;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      body.active-mode #content-display {
+        display: flex;
+      }
+
+      @keyframes expandView {
+        from {
+          height: 0;
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          height: 100%;
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* --- TAB NAVIGASI --- */
+      .tab-nav {
+        display: flex;
+        width: 100%;
+        flex-shrink: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.2);
+        z-index: 10;
+      }
+
+      .tab-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 20px 0;
+        font-size: 1.4rem;
+        cursor: pointer;
+        border-bottom: 4px solid transparent;
+        text-transform: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        transition: 0.3s;
+      }
+
+      .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        background: rgba(0, 229, 255, 0.05);
+        font-weight: bold;
+      }
+
+      .tab-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      /* Style untuk Tab Disabled */
+      .tab-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        color: #555;
+        border-bottom-color: transparent !important;
+      }
+
+      /* --- SCROLLABLE CONTENT --- */
+      .scroll-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 30px 40px;
+        padding-bottom: 120px;
+        width: 100%;
+        position: relative;
+      }
+
+      .scroll-container::-webkit-scrollbar {
+        width: 10px;
+      }
+      .scroll-container::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .scroll-container::-webkit-scrollbar-thumb {
+        background: rgba(0, 229, 255, 0.3);
+        border-radius: 5px;
+      }
+      .scroll-container::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
+      }
+
+      #material-content,
+      #quiz-form {
+        width: 100%;
+        max-width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+      }
+
+      #material-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      #material-content pre {
+        overflow-x: auto;
+        white-space: pre-wrap;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 8px;
+      }
+
+      /* --- INPUT AREA --- */
+      .input-wrapper {
+        width: 100%;
+        max-width: 800px;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 100;
+      }
+
+      body.active-mode .input-wrapper {
+        position: fixed;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 1000px;
+        width: 95%;
+        background: rgba(2, 28, 45, 0.95);
+        padding: 15px 25px;
+        border-radius: 60px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(15px);
+        display: flex;
+        align-items: center;
+      }
+
+      .input-row {
+        width: 100%;
+      }
+      body.active-mode .input-row {
+        display: flex;
+        gap: 20px;
+        width: 100%;
+        align-items: center;
+      }
+
+      .input-label {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        display: block;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-align: center;
+      }
+      body.active-mode .input-label {
+        display: none;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 1.2rem;
+        background-color: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        font-family: inherit;
+        font-size: 1.3rem;
+        color: white;
+        transition: all 0.3s;
+      }
+      body.active-mode input[type="text"] {
+        margin-bottom: 0;
+        height: 60px;
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        flex-grow: 1;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      /* --- TOMBOL --- */
+      .btn-group {
+        display: flex;
+        gap: 20px;
+        margin-top: 20px;
+        justify-content: center;
+      }
+      body.active-mode .btn-group {
+        margin-top: 0;
+        gap: 15px;
+        flex-shrink: 0;
+        align-items: center;
+      }
+
+      button {
+        padding: 1.2rem;
+        border-radius: 1rem;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1.2rem;
+        transition: all 0.3s;
+        width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border: none;
+        color: white;
+        white-space: nowrap;
+      }
+
+      body.active-mode button {
+        padding: 0 30px;
+        height: 60px;
+        font-size: 1.1rem;
+        border-radius: 30px;
+        width: auto;
+      }
+
+      .btn-material {
+        background: linear-gradient(90deg, #00c6ff, #0072ff);
+        box-shadow: 0 4px 15px rgba(0, 114, 255, 0.3);
+      }
+      .btn-quiz {
+        background: linear-gradient(90deg, #ff00cc, #333399);
+        box-shadow: 0 4px 15px rgba(255, 0, 204, 0.3);
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+      }
+
+      /* --- CLOSE BUTTON BARU (DI BAWAH) --- */
+      .close-btn-bottom {
+        display: none; /* Sembunyi saat mode awal */
+        background: rgba(255, 23, 68, 0.1);
+        border: 1px solid rgba(255, 23, 68, 0.5);
+        color: var(--error-color);
+        padding: 0;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+      }
+
+      body.active-mode .close-btn-bottom {
+        display: flex; /* Muncul saat mode aktif */
+        width: 60px;
+        height: 60px;
+        border-radius: 30px;
+        font-size: 1.5rem;
+      }
+
+      .close-btn-bottom:hover {
+        background: var(--error-color);
+        color: white;
+        transform: rotate(90deg) !important;
+        box-shadow: 0 0 15px rgba(255, 23, 68, 0.5);
+      }
+
+      .tab-pane {
+        display: none;
+        padding-top: 15px;
+      }
+      .tab-pane.active {
+        display: block;
+        animation: fadeIn 0.3s;
+      }
+
+      /* --- QUIZ UI --- */
+      .quiz-item {
+        margin-bottom: 1.5rem;
+        padding: 25px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .quiz-question {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+        color: var(--primary);
+        font-weight: 600;
+        line-height: 1.4;
+      }
+
+      .quiz-options label {
+        display: block;
+        padding: 15px 20px;
+        margin-bottom: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.2s;
+        border: 1px solid transparent;
+        font-size: 1.3rem;
+      }
+      .quiz-options label:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      .quiz-options input {
+        margin-right: 20px;
+        transform: scale(1.3);
+      }
+
+      .feedback-box {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 10px;
+        display: none;
+        line-height: 1.5;
+        font-size: 1.2rem;
+      }
+      .feedback-correct {
+        background: rgba(0, 230, 118, 0.15);
+        border: 1px solid var(--success-color);
+        color: #e0f7fa;
+      }
+      .feedback-wrong {
+        background: rgba(255, 23, 68, 0.15);
+        border: 1px solid var(--error-color);
+        color: #e0f7fa;
+      }
+
+      .btn-submit {
+        background: var(--success-color);
+        color: #000;
+        width: auto;
+        padding: 15px 45px;
+        margin-top: 20px;
+        border-radius: 40px;
+        box-shadow: 0 5px 20px rgba(0, 230, 118, 0.3);
+        font-size: 1.3rem;
+      }
+
+      /* SPINNER */
+      .spinner {
+        display: none;
+        border: 5px solid rgba(255, 255, 255, 0.1);
+        border-top: 5px solid var(--primary);
+        border-radius: 50%;
+        width: 70px;
+        height: 70px;
+        animation: spin 1s linear infinite;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 20;
+      }
+      .spinner.purple {
+        border-top-color: #d500f9;
+        box-shadow: 0 0 30px rgba(213, 0, 249, 0.5);
+      }
+
+      @keyframes spin {
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* --- MARKDOWN STYLES --- */
+      #material-content {
+        max-width: 100%;
+        margin: 0 auto;
+        line-height: 1.8;
+        font-size: 1.4rem;
+      }
+      #material-content h1 {
+        font-size: 2.8rem;
+        margin-top: 0;
+        color: var(--primary);
+      }
+      #material-content h2 {
+        font-size: 2.2rem;
+        margin-top: 1.8rem;
+        color: #fff;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        padding-bottom: 10px;
+      }
+      #material-content p {
+        margin-bottom: 1.2rem;
+      }
+      #material-content li {
+        margin-bottom: 0.6rem;
+      }
+
+      /* --- CREDITS --- */
+      .credits {
+        position: fixed;
+        bottom: 15px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.9rem;
+        z-index: 10;
+        pointer-events: none; /* Agar tidak menghalangi interaksi */
+        transition: opacity 0.5s ease;
+      }
+
+      /* Sembunyikan kredit saat mode aktif agar tidak bertumpuk dengan input bar */
+      body.active-mode .credits {
+        opacity: 0;
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2.5rem;
+        }
+        h2 {
+          font-size: 2rem;
+        }
+
+        /* FIX MOBILE UI: INPUT WRAPPER */
+        body.active-mode .input-wrapper {
+          bottom: 10px;
+          width: 95%;
+          flex-direction: column; /* Input di atas, Tombol di bawah */
+          border-radius: 25px;
+          padding: 15px;
+        }
+
+        body.active-mode .input-row {
+          flex-direction: column;
+          gap: 10px;
+          width: 100%;
+        }
+
+        body.active-mode input[type="text"] {
+          width: 100%;
+          margin-bottom: 0;
+        }
+
+        /* FIX MOBILE UI: TOMBOL SEJAJAR */
+        body.active-mode .btn-group {
+          width: 100%;
+          display: flex;
+          flex-direction: row; /* Horizontal */
+          justify-content: space-between;
+          gap: 8px;
+          margin-top: 0;
+        }
+
+        /* Materi & Soal mengisi ruang */
+        body.active-mode button {
+          width: auto;
+          flex: 1; /* Expand */
+          padding: 0;
+          height: 50px;
+          font-size: 1rem;
+          border-radius: 12px;
+        }
+
+        /* Close Button Tetap Ukuran */
+        body.active-mode .close-btn-bottom {
+          flex: 0 0 50px; /* Fix size */
+          width: 50px;
+          height: 50px;
+          border-radius: 12px;
+          font-size: 1.2rem;
+        }
+
+        .tab-nav {
+          margin-top: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-container">
+      <!-- HEADER (AKAN HILANG SAAT MODE AKTIF) -->
+      <div class="st-header">
+        <h1>🎓</h1>
+        <h2>Z-Learn AI</h2>
+        <p class="subtitle">Belajar santuy & Latihan Soal <i>Kalcer</i></p>
+      </div>
+
+      <!-- CONTENT DISPLAY (EXPANDED BODY) -->
+      <div id="content-display">
+        <!-- Tabs Navigasi -->
+        <div class="tab-nav">
+          <button
+            class="tab-btn active"
+            id="tab-materi"
+            onclick="switchTab('materi')"
+          >
+            📚 Materi
+          </button>
+          <button class="tab-btn" id="tab-soal" onclick="switchTab('soal')">
+            📝 Soal
+          </button>
+        </div>
+
+        <!-- Container Scroll untuk Konten -->
+        <div class="scroll-container">
+          <!-- SPINNER -->
+          <div id="spinner" class="spinner"></div>
+
+          <!-- MATERI PANE -->
+          <div id="view-materi" class="tab-pane active">
+            <div id="material-content"></div>
+          </div>
+
+          <!-- SOAL PANE -->
+          <div id="view-soal" class="tab-pane">
+            <div
+              id="score-board"
+              style="
+                text-align: center;
+                font-size: 1.8rem;
+                margin-bottom: 20px;
+                display: none;
+                color: var(--success-color);
+                font-weight: bold;
+              "
+            ></div>
+            <div id="quiz-form"></div>
+            <button
+              id="btn-submit-quiz"
+              class="btn-submit"
+              onclick="submitQuiz()"
+              style="display: none"
+            >
+              ✅ Cek Jawaban
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- INPUT AREA (Moving Bar) -->
+      <div class="input-wrapper">
+        <label class="input-label">Belajar Apa Nich?</label>
+        <div class="input-row">
+          <input
+            type="text"
+            id="topicInput"
+            placeholder="Contoh: Hukum Newton, Fotosintesis..."
+            onkeypress="handleEnter(event)"
+          />
+
+          <div class="btn-group">
+            <button class="btn-material" onclick="generateMaterial()">
+              📖 Materi
+            </button>
+            <button class="btn-quiz" onclick="generateQuiz()">📝 Soal</button>
+            <!-- Tombol Close BARU (Hanya muncul saat active mode) -->
+            <button
+              class="close-btn-bottom"
+              onclick="closeExpandedView()"
+              title="Tutup"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CREDITS -->
+      <div class="credits">Created by Harits_En with Gemini AI</div>
+    </div>
+
+    <script>
+      // API Key dari file yang Anda berikan
+      const FIXED_API_KEY = "AIzaSyAkoDVE6QN6rPETe_K_gGnB-59RLdm5PMI";
+
+      let currentQuizData = [];
+      let isExpanded = false;
+      let isMaterialReady = false;
+      let isQuizReady = false;
+
+      // --- LOGIKA BARU: MENYIMPAN KONTEKS MATERI ---
+      let currentMaterialContext = "";
+
+      function handleEnter(e) {
+        if (e.key === "Enter") generateMaterial();
+      }
+
+      // --- MODE TOGGLE ---
+      function openExpandedView(tab) {
+        if (!isExpanded) {
+          document.body.classList.add("active-mode");
+          document.getElementById("content-display").style.display = "flex";
+          isExpanded = true;
+        }
+        switchTab(tab);
+      }
+
+      function closeExpandedView() {
+        document.body.classList.remove("active-mode");
+        const contentDisplay = document.getElementById("content-display");
+
+        contentDisplay.style.opacity = "0";
+        contentDisplay.style.transform = "translateY(20px)";
+
+        setTimeout(() => {
+          contentDisplay.style.display = "none";
+          contentDisplay.style.opacity = "1";
+          contentDisplay.style.transform = "translateY(0)";
+
+          // Reset State & Content
+          document.getElementById("material-content").innerHTML = "";
+          document.getElementById("quiz-form").innerHTML = "";
+          document.getElementById("btn-submit-quiz").style.display = "none";
+          document.getElementById("score-board").style.display = "none";
+
+          isMaterialReady = false;
+          isQuizReady = false;
+          currentMaterialContext = ""; // RESET KONTEKS MATERI SAAT DITUTUP
+          updateTabStatus();
+        }, 300);
+
+        isExpanded = false;
+        document.getElementById("topicInput").value = "";
+      }
+
+      function switchTab(tabName) {
+        // Cek apakah tab sedang disabled
+        const btn = document.getElementById(`tab-${tabName}`);
+        if (btn.disabled) return;
+
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-pane")
+          .forEach((p) => p.classList.remove("active"));
+
+        document.getElementById(`tab-${tabName}`).classList.add("active");
+        document.getElementById(`view-${tabName}`).classList.add("active");
+      }
+
+      function updateTabStatus() {
+        const btnMateri = document.getElementById("tab-materi");
+        const btnSoal = document.getElementById("tab-soal");
+
+        btnMateri.disabled = !isMaterialReady;
+        btnSoal.disabled = !isQuizReady;
+      }
+
+      // --- GENERATE MATERI ---
+      async function generateMaterial() {
+        const topic = document.getElementById("topicInput").value;
+        if (!topic) {
+          alert("Isi topiknya dulu dong! 😅");
+          return;
+        }
+
+        document.getElementById("tab-materi").disabled = false;
+        document.getElementById("tab-soal").disabled = !isQuizReady;
+
+        openExpandedView("materi");
+        showSpinner(true);
+
+        const prompt = `
+            Bertindaklah sebagai teman belajar yang asik. Jelaskan topik "${topic}" dengan gaya bahasa gaul tapi edukatif.
+            Gunakan format Markdown yang rapi.
+            Struktur:
+            1. **Judul Seru** (H1)
+            2. **SAT-SET** (H2 - Ringkasan)
+            3. **Bedah Materi** (H2 - Penjelasan detail dengan analogi)
+            4. **Tips Mengingat** (Bullet points)
+            `;
+
+        try {
+          const text = await callGeminiAPI(prompt);
+          document.getElementById("material-content").innerHTML =
+            marked.parse(text);
+          isMaterialReady = true;
+          currentMaterialContext = text; // SIMPAN KONTEKS MATERI DI SINI
+          updateTabStatus();
+        } catch (error) {
+          document.getElementById("material-content").innerHTML =
+            `<p style="color:red">Error: ${error.message}</p>`;
+        } finally {
+          showSpinner(false);
+        }
+      }
+
+      // --- GENERATE QUIZ ---
+      async function generateQuiz() {
+        const topic = document.getElementById("topicInput").value;
+        if (!topic) {
+          alert("Isi topiknya dulu dong! 😅");
+          return;
+        }
+
+        document.getElementById("tab-soal").disabled = false;
+        document.getElementById("tab-materi").disabled = !isMaterialReady;
+
+        openExpandedView("soal");
+
+        document.getElementById("quiz-form").innerHTML = "";
+        document.getElementById("btn-submit-quiz").style.display = "none";
+        document.getElementById("score-board").style.display = "none";
+
+        showSpinner(true, "purple");
+
+        // --- LOGIKA BARU UNTUK PROMPT SOAL ---
+        let prompt = "";
+
+        // Jika materi sudah digenerate (konteks tidak kosong), gunakan materi tersebut sebagai acuan
+        if (isMaterialReady && currentMaterialContext) {
+          prompt = `
+                Berdasarkan materi berikut ini:
+                ---
+                ${currentMaterialContext}
+                ---
+                Buatkan 10 soal latihan pilihan ganda yang RELEVAN dengan materi di atas.
+                Format Output HARUS JSON valid array of objects: 
+                [{"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": "..."}]
+                `;
+        } else {
+          // Jika materi belum digenerate (Generate Soal langsung), gunakan topik dari input
+          prompt = `
+                Buatkan 10 soal latihan pilihan ganda tentang "${topic}" untuk siswa SMA.
+                Output HARUS JSON valid array of objects.
+                Format: [{"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": "..."}]
+                `;
+        }
+
+        try {
+          let text = await callGeminiAPI(prompt);
+          text = text
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+          currentQuizData = JSON.parse(text);
+          renderQuiz(currentQuizData);
+          isQuizReady = true;
+          updateTabStatus();
+        } catch (error) {
+          console.error(error);
+          document.getElementById("quiz-form").innerHTML =
+            `<p style="color:red">Gagal generate soal. Coba lagi ya!</p>`;
+        } finally {
+          showSpinner(false);
+        }
+      }
+
+      // --- UTILS ---
+      function showSpinner(show, color = "default") {
+        const spinner = document.getElementById("spinner");
+        const tabButtons = document.querySelectorAll(".tab-btn");
+
+        if (show) {
+          tabButtons.forEach((btn) => (btn.disabled = true));
+        } else {
+          updateTabStatus();
+        }
+
+        if (color === "purple") spinner.classList.add("purple");
+        else spinner.classList.remove("purple");
+
+        spinner.style.display = show ? "block" : "none";
+      }
+
+      async function callGeminiAPI(promptText) {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${FIXED_API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }],
+            }),
+          },
+        );
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.candidates[0].content.parts[0].text;
+      }
+
+      function renderQuiz(questions) {
+        const container = document.getElementById("quiz-form");
+        container.innerHTML = "";
+
+        questions.forEach((q, index) => {
+          const qDiv = document.createElement("div");
+          qDiv.className = "quiz-item";
+
+          let optionsHTML = "";
+          q.options.forEach((opt, i) => {
+            optionsHTML += `
+                        <label id="label-${index}-${i}">
+                            <input type="radio" name="q${index}" value="${i}">
+                            ${opt}
+                        </label>
+                    `;
+          });
+
+          qDiv.innerHTML = `
+                    <div class="quiz-question">${index + 1}. ${q.question}</div>
+                    <div class="quiz-options">${optionsHTML}</div>
+                    <div class="feedback-box" id="feedback-${index}"></div>
+                `;
+          container.appendChild(qDiv);
+        });
+
+        document.getElementById("btn-submit-quiz").style.display = "block";
+        document.getElementById("btn-submit-quiz").disabled = false;
+        document.getElementById("btn-submit-quiz").innerText = "✅ Cek Jawaban";
+      }
+
+      function submitQuiz() {
+        let score = 0;
+        let total = currentQuizData.length;
+        let allAnswered = true;
+
+        for (let i = 0; i < total; i++) {
+          if (!document.querySelector(`input[name="q${i}"]:checked`)) {
+            allAnswered = false;
+            break;
+          }
+        }
+        if (!allAnswered) {
+          alert("Jawab semua soal dulu dong! 😜");
+          return;
+        }
+
+        currentQuizData.forEach((q, index) => {
+          const selectedVal = parseInt(
+            document.querySelector(`input[name="q${index}"]:checked`).value,
+          );
+          const feedbackEl = document.getElementById(`feedback-${index}`);
+          const labelSelected = document.getElementById(
+            `label-${index}-${selectedVal}`,
+          );
+          const labelCorrect = document.getElementById(
+            `label-${index}-${q.correct_index}`,
+          );
+
+          feedbackEl.className = "feedback-box";
+          if (selectedVal === q.correct_index) {
+            score++;
+            feedbackEl.classList.add("feedback-correct");
+            feedbackEl.innerHTML = `<strong>✅ Benar!</strong> ${q.explanation}`;
+            labelSelected.style.background = "rgba(0, 230, 118, 0.4)";
+            labelSelected.style.border = "1px solid var(--success-color)";
+          } else {
+            feedbackEl.classList.add("feedback-wrong");
+            feedbackEl.innerHTML = `<strong>❌ Salah.</strong> Jawaban: <b>${q.options[q.correct_index]}</b>.<br>${q.explanation}`;
+            labelSelected.style.background = "rgba(255, 23, 68, 0.4)";
+            labelSelected.style.border = "1px solid var(--error-color)";
+            labelCorrect.style.border = "1px solid var(--success-color)";
+          }
+          feedbackEl.style.display = "block";
+        });
+
+        const sb = document.getElementById("score-board");
+        sb.innerText = `Skor Kamu: ${score} / ${total}`;
+        sb.style.display = "block";
+        sb.scrollIntoView({ behavior: "smooth" });
+
+        const btn = document.getElementById("btn-submit-quiz");
+        btn.disabled = true;
+        btn.innerText = "Sudah Dinilai";
+      }
+    </script>
+  </body>
+</html>
